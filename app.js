@@ -3,25 +3,21 @@ const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const userRouter = require('./routes/users');
-const movieRouter = require('./routes/movies');
-const auth = require('./middlewares/auth');
-const {createUser, login} = require('./controllers/users');
-const {requestLogger, errorLogger} = require('./middlewares/logger');
-const {errors} = require('celebrate');
-const {validateSignUp, validateSignIn} = require('./middlewares/validation');
+const { errors } = require('celebrate');
+const { requestLogger, errorLogger } = require('./middlewares/logger');
 const errorsHandler = require('./middlewares/errorsHandler');
+const routes = require('./routes'); // если в папке есть index.js, то он подключится автоматически
 
 dotenv.config();
-const {PORT = 3000} = process.env;
+const { PORT = 3000, NODE_ENV, DB_URL } = process.env;
 
 const app = express();
 
-mongoose.connect('mongodb://localhost:27017/moviesexplorerdb', {
+mongoose.connect(NODE_ENV === 'production' ? DB_URL : 'mongodb://localhost:27017/moviesexplorerdb', {
   useNewUrlParser: true,
   useCreateIndex: true,
   useFindAndModify: false,
-  useUnifiedTopology: true
+  useUnifiedTopology: true,
 });
 
 app.use(cors());
@@ -31,13 +27,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(requestLogger);
 
-app.post('/signin', validateSignIn, login);
-app.post('/signup', validateSignUp, createUser);
-
-app.use(auth);
-
-app.use('/', userRouter);
-app.use('/', movieRouter);
+app.use(routes);
 
 app.use(errorLogger);
 app.use(errors());

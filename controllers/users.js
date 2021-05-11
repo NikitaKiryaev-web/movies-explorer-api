@@ -1,15 +1,15 @@
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const dotenv = require('dotenv');
 const User = require('../models/user');
 const AuthError = require('../errors/AuthError');
 const NotFoundError = require('../errors/NotFoundError');
 const ValidationError = require('../errors/ValidationError');
 const DuplicateError = require('../errors/DuplicateError');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const dotenv = require('dotenv');
 
 dotenv.config();
 
-const {NODE_ENV, JWT_SECRET} = process.env;
+const { NODE_ENV, JWT_SECRET } = process.env;
 
 // Получить инфу о текущем пользователе
 const getMyUserInfo = (req, res, next) => {
@@ -27,18 +27,18 @@ const getMyUserInfo = (req, res, next) => {
 
 // Обновить данные пользователя(почту и имя)
 const updateUserInfo = (req, res, next) => {
-  const {email, name} = req.body;
-  if(!email || !name) {
+  const { email, name } = req.body;
+  if (!email || !name) {
     throw new ValidationError('Введенные данные некорректны');
   }
-  User.findByIdAndUpdate(req.user._id, { name, about }, {
+  User.findByIdAndUpdate(req.user._id, { name, email }, {
     new: true,
     runValidators: true,
   })
     .orFail(new Error('Нет пользователя с таким Id'))
     .then((data) => res.status(200).send(data))
     .catch((err) => {
-      if (err.name = "ValidationError" || err.name === "CastError") {
+      if (err.name === 'ValidationError' || err.name === 'CastError') {
         throw new ValidationError('Введенные данные некорректны');
       }
       throw new NotFoundError(err.message);
@@ -48,42 +48,42 @@ const updateUserInfo = (req, res, next) => {
 
 // Создание пользователя
 const createUser = (req, res, next) => {
-  const {name, email, password} = req.body;
-  if(!email || !name || !password) {
+  const { name, email, password } = req.body;
+  if (!email || !name || !password) {
     throw new AuthError('Пароль или почта некорректны');
   }
   bcrypt.hash(password, 10)
     .then((hash) => {
-      User.create({email, name, password: hash})
+      User.create({ email, name, password: hash })
         .then((user) => res.status(200).send({
           _id: user._id,
           name: user.name,
           email: user.email,
         }))
         .catch((err) => {
-          if(err.name === 'MongoError' || err.code === 11000) {
+          if (err.name === 'MongoError' || err.code === 11000) {
             throw new DuplicateError('Пользователь с таким email уже существует');
           } else if (err.name === 'ValidationError' || err.name === 'CastError') {
             throw new ValidationError('Пароль или почта некорректны');
           }
         })
         .catch(next);
-    })
+    });
 };
 
 // Логин
 const login = (req, res, next) => {
-  const {email, password} = req.body;
+  const { email, password } = req.body;
   return User.findUserByCredentials(email, password)
     .then((user) => {
-      const token = jwt.sign({_id: user._id}, `${NODE_ENV === 'production' ? JWT_SECRET : 'dev-secret'}`, {expiresIn: '7d'});
-      res.send({token});
+      const token = jwt.sign({ _id: user._id }, `${NODE_ENV === 'production' ? JWT_SECRET : 'dev-secret'}`, { expiresIn: '7d' });
+      res.send({ token });
     })
     .catch((err) => {
       throw new AuthError(err.message);
     })
     .catch(next);
-}
+};
 
 module.exports = {
   getMyUserInfo,

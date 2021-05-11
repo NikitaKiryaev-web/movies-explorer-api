@@ -7,22 +7,54 @@ const getMovies = (req, res, next) => {
   Movie.find({})
     .then((movies) => res.status(200).send(movies))
     .catch(next);
-}
+};
 
 const createMovie = (req, res, next) => {
-  const {country, director, duration, year, description, image, trailer, nameRU, nameEN, thumbnail, movieId} = req.body;
-  if(!country || !director || !duration || !year || !description || !image || !trailer || !nameRU || !nameEN || !thumbnail || !movieId) {
-     next(new ValidationError('Данные неверны'));
-  };
+  const {
+    country,
+    director,
+    duration,
+    year,
+    description,
+    image,
+    trailer,
+    nameRU,
+    nameEN,
+    thumbnail,
+    movieId,
+  } = req.body;
+  if (!country
+    || !director
+    || !duration
+    || !year
+    || !description
+    || !image
+    || !trailer
+    || !nameRU
+    || !nameEN
+    || !thumbnail
+    || !movieId) {
+    next(new ValidationError('Данные неверны'));
+  }
   Movie.create({
-    country, director, duration, year, description, image, trailer, nameRU, nameEN, thumbnail, movieId, owner: req.user._id
+    country,
+    director,
+    duration,
+    year,
+    description,
+    image,
+    trailer,
+    nameRU,
+    nameEN,
+    thumbnail,
+    movieId,
+    owner: req.user._id,
   })
     .then((movie) => res.status(200).send(movie))
     .catch((err) => {
-      throw new ValidationError(err.message);
-    })
-    .catch(next);
-}
+      next(new ValidationError(err.message));
+    });
+};
 
 const deleteMovie = (req, res, next) => {
   const userId = req.user._id;
@@ -36,22 +68,21 @@ const deleteMovie = (req, res, next) => {
         .then((data) => res.status(200).send(data))
         .catch((err) => {
           if (err.name === 'CastError') {
-            throw new ValidationError('Id неверный');
+            next(new ValidationError('Id неверный'));
           }
-        })
-        .catch(next);
+        });
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        throw new ValidationError('Id неверный');
+        next(new ValidationError('Id неверный'));
+      } else {
+        next(new NotFoundError(err.message));
       }
-      throw new NotFoundError(err.message);
-    })
-    .catch(next);
+    });
 };
 
 module.exports = {
   getMovies,
   createMovie,
   deleteMovie,
-}
+};

@@ -61,22 +61,10 @@ const movieSchema = new mongoose.Schema({
   nameRU: {
     type: String,
     required: true,
-    validate: {
-      validator(name) {
-        return validator.isAlphanumeric(name, 'ru-RU');
-      },
-      message: (props) => `${props.value} не на русском языке`,
-    },
   },
   nameEN: {
     type: String,
     required: true,
-    validate: {
-      validator(name) {
-        return validator.isAlphanumeric(name, 'en-US');
-      },
-      message: (props) => `${props.value} не на английском языке`,
-    },
   },
 });
 
